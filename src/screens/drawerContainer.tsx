@@ -13,7 +13,7 @@ const DrawerContainer = (props: { children: unknown; }) => {
     const items = [
     { text: 'Home', route: '/home' },
     { text: 'Data', route: '/data' },
-    { text: 'Create', route: '/home'},
+    { text: 'Create', route: '/create'},
     { separator: true },
     { text: 'Logout', disabled: false,  route: '/' },
     ];

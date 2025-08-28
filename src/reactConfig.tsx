@@ -4,6 +4,7 @@ import axios from 'axios';
 declare global {
     var globalUrlApi : string;
     var globalTypes : String[];
+    var globalTypesForForm : String[];
 }
 globalThis.globalUrlApi = "potato2";
 
@@ -23,8 +24,10 @@ const SetTypes = async (url : String) => {
             throw new Error(`Error: ${result.statusText}`);
         }
         var typesList : String[] = await result.json() as String[];
-        typesList.push("All")
-        globalThis.globalTypes = typesList;
+        globalThis.globalTypesForForm = typesList;
+        var typesListCopy = structuredClone(typesList);
+        typesListCopy.push("All")
+        globalThis.globalTypes = typesListCopy;
     } catch (err) {
         console.error("Error fetching data:", err);
     }
