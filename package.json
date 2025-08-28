@@ -12,6 +12,8 @@
   "dependencies": {
     "@progress/kendo-licensing": "^1.7.1",
     "@progress/kendo-react-grid": "^12.0.0",
+    "@progress/kendo-theme-default": "^12.0.0",
+    "@progress/kendo-theme-utils": "^12.0.0",
     "axios": "^1.11.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

@@ -3,9 +3,13 @@ import { FetchUrlFromFile } from "../reactConfig"
 
 
 export function Login(){
+    const getUrlInfo = async () => {
+        FetchUrlFromFile();
+    }
+    getUrlInfo();
     const navigate = useNavigate();
     const handleClick = () => {
-        FetchUrlFromFile();
+        
         navigate('/home')
     }
 
