@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react"
-import {Grid, GridColumn, type GridPageChangeEvent, type GridSortChangeEvent, } from '@progress/kendo-react-grid';
+import { useEffect, useState, type ChangeEvent } from "react"
+import {Grid, GridColumn, type GridFilterChangeEvent, type GridPageChangeEvent, type GridSortChangeEvent, } from '@progress/kendo-react-grid';
 import '@progress/kendo-theme-default/dist/all.css';
 import DrawerContainer from "./drawerContainer";
-import type { PagerTargetEvent } from '@progress/kendo-react-data-tools';
-import { process, type CompositeFilterDescriptor, type DataResult, type SortDescriptor, type State } from '@progress/kendo-data-query';
+import type { Filter, PagerTargetEvent } from '@progress/kendo-react-data-tools';
+import { process, type CompositeFilterDescriptor, type DataResult, type FilterDescriptor, type SortDescriptor, type State } from '@progress/kendo-data-query';
+import { DropDownList, type DropDownListChangeEvent, type DropDownListHandle } from '@progress/kendo-react-dropdowns';
 
 
 
@@ -47,6 +48,8 @@ export function ImsProgData(){
     const [numButtons] = useState<number> (5); //number of page buttons on the bottom scrollbar
     const [sort, setSort] = useState<SortDescriptor[]>([]);
     const [filter, setFilter] = useState<CompositeFilterDescriptor | undefined>(undefined);
+    const [selectedStatus, setSelectedStatus] = useState<string>('All');
+    
 
     const [dataState, setDataState] = useState<State>({
       skip: 0,
@@ -57,8 +60,10 @@ export function ImsProgData(){
     const [processedData, setProcessedData] = useState<DataResult>();
 
     const updateProcessedData = (newDataState : State) => {
-      if (data != undefined)
+      if (data != undefined){
         setProcessedData(process(data, newDataState));
+        //console.log(process(data, newDataState))
+      }
     }
 
     const updateDataState = (newDataState : State) => {
@@ -68,6 +73,19 @@ export function ImsProgData(){
         sort: newDataState.sort,
         filter: newDataState.filter
       })
+    }
+
+    const combineFilters = (regularFilter : CompositeFilterDescriptor | undefined, dropDownFilter : FilterDescriptor | undefined) => {
+      if (dropDownFilter == undefined){
+        return regularFilter;
+      }
+      if (regularFilter != undefined){
+        var newFilter = structuredClone(regularFilter);
+        newFilter.filters.push(dropDownFilter)
+        return newFilter;
+      } else {
+        return {logic : 'and', filters: [dropDownFilter]} as CompositeFilterDescriptor
+      }
     }
 
     const pageChange = (event: GridPageChangeEvent) => {
@@ -114,8 +132,44 @@ export function ImsProgData(){
         }
       var newDataState = {skip: page.skip, take: page.take, sort: newSort, filter: filter}
       updateDataState(newDataState);
-      updateProcessedData(newDataState);
-            
+      updateProcessedData(newDataState);        
+    }
+
+    const filterChange = (event: GridFilterChangeEvent) => {
+      console.log(event);
+        const evfilt = ({...event.filter})
+        var newFilter;
+        if (evfilt.filters != undefined){ //filter is undefined if the filter is cleared.
+            setFilter(
+                evfilt
+            );
+            newFilter=evfilt;
+        } else {
+            setFilter(undefined)
+            newFilter=undefined;
+        }
+        
+        var newFilter2 = combineFilters(newFilter, selectedStatus == 'All' ?  undefined : {field: "Type", operator: 'eq', value: selectedStatus})
+        var newDataState ={skip: page.skip, take: page.take, sort: sort, filter: newFilter2}
+        console.log(newDataState);
+        updateDataState(newDataState);
+        updateProcessedData(newDataState);
+    }
+    const dropDownChange = (event : DropDownListChangeEvent) => {
+      setSelectedStatus(event.value)
+      console.log(event.value)
+      var newFilter: CompositeFilterDescriptor | undefined;
+      if (event.value != "All"){
+        newFilter = combineFilters(filter, {field: "Type", operator: 'eq', value: event.value});
+        var newDataState = {skip: page.skip, take: page.take, sort: sort, filter: newFilter}
+        updateDataState(newDataState)
+        updateProcessedData(newDataState)
+      } else {
+        newFilter = combineFilters(filter, undefined)
+        var newDataState2 = {skip: page.skip, take: page.take, sort: sort, filter: newFilter}
+        updateDataState(newDataState2)
+        updateProcessedData(newDataState2)
+      }
     }
 
     useEffect(() => {
@@ -153,7 +207,7 @@ export function ImsProgData(){
             onSortChange={sortChange}
 
             filterable={true} 
-            
+            onFilterChange={filterChange}
             
             reorderable={true}
             resizable={true}
@@ -168,12 +222,19 @@ export function ImsProgData(){
             }}
             onPageChange={pageChange}
 
-            //onDataStateChange={(e) => setDataState(e.dataState)}
+            
             >
             {cols.map((col) => (
             <GridColumn key={col.field} field={col.field} title={col.title} orderIndex={col.orderIndex} width={col.width}></GridColumn>
             ))}
             </Grid>
+            <DropDownList
+              data={globalTypes}
+              value={selectedStatus}
+              onChange={dropDownChange}
+              //onChange={(e) => setSelectedStatus(e.value)}
+              style={{ width: '150px' }}
+            />
         </div>
       </DrawerContainer>
     )
