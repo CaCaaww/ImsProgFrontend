@@ -1,10 +1,11 @@
-import { useEffect, useState, type ChangeEvent } from "react"
+import { useEffect, useState} from "react"
 import {Grid, GridColumn, type GridFilterChangeEvent, type GridPageChangeEvent, type GridSortChangeEvent, } from '@progress/kendo-react-grid';
 import '@progress/kendo-theme-default/dist/all.css';
 import DrawerContainer from "./drawerContainer";
-import type { Filter, PagerTargetEvent } from '@progress/kendo-react-data-tools';
+import type { PagerTargetEvent } from '@progress/kendo-react-data-tools';
 import { process, type CompositeFilterDescriptor, type DataResult, type FilterDescriptor, type SortDescriptor, type State } from '@progress/kendo-data-query';
-import { DropDownList, type DropDownListChangeEvent, type DropDownListHandle } from '@progress/kendo-react-dropdowns';
+import { DropDownList, type DropDownListChangeEvent } from '@progress/kendo-react-dropdowns';
+import { useNavigate } from "react-router-dom";
 
 
 
@@ -39,6 +40,7 @@ const initialColumns = [
 
 export function ImsProgData(){
     var url = globalUrlApi;
+    const navigate = useNavigate();
     const [loading, setLoading] = useState<boolean>(false);
     const [data, setData] = useState<imsProgGui[]>();
     const [cols] = useState<column[]>(initialColumns); // data that stores the order and size of the columns (along with their name and field)
@@ -63,9 +65,9 @@ export function ImsProgData(){
       if (data != undefined){
         setProcessedData(process(data, newDataState));
         //console.log(process(data, newDataState))
+        setTotal(process(data, newDataState).total)
       }
     }
-
     const updateDataState = (newDataState : State) => {
       setDataState({
         skip: newDataState.skip,
@@ -172,12 +174,62 @@ export function ImsProgData(){
       }
     }
 
+    const handlePrint = async () =>{
+      try {
+        if (data != undefined){
+            //var dataString : string = "[";
+            var dataState2 : State = {
+              skip: 0,
+              take: data.length,
+              sort: dataState.sort,
+              filter: dataState.filter
+            }
+            const processedData2 = process(data, dataState2);
+            //console.log(processedData2)
+            // processedData2.data.forEach(element => {
+            //   dataString += JSON.stringify({"Program Name": element.programName, "Cust": element.cust, "Description": element.description,
+            //    "Updates to TTM": (element.updates == null? "" : element.updates), "Type": element.type}) + ", "
+            // });
+            // dataString = dataString.substring(0, dataString.length -2);
+            console.log("proccessedData",JSON.stringify(processedData2.data));
+            const response = await fetch(globalUrlApi + "/partialPrint", {
+                    method: "POST",
+                    credentials: 'include',
+                    headers: {
+                    'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(processedData2.data),
+            });
+            if (response.status == 401){
+                navigate("/")
+                console.warn("Login Timed Out")
+                return
+            }
+            const result = await response;
+            console.log("result",result)
+          }
+      } catch (error) {
+        console.error("Error sending Data:", error);
+      } 
+    }
+
     useEffect(() => {
         const fetchData = async() => {
           setLoading(true)
           try {
-            const result = await fetch(url)
+            const result = await fetch(url, {
+              method: 'GET',
+              credentials: 'include',
+              headers: {
+                  'Accept': 'application/json'
+              }
+            })
             if (!result.ok){
+              if (result.status == 401){
+                navigate("/")
+                console.warn("Login Timed Out")
+                return
+              }
               throw new Error(`Error: ${result.statusText}`);
             }
             var imslist : imsProgGui[]  = await result.json() as imsProgGui[];
@@ -236,6 +288,7 @@ export function ImsProgData(){
               style={{ width: '150px' }}
             />
         </div>
+        <button onClick={handlePrint}>Print Data Grid</button>
       </DrawerContainer>
     )
 }

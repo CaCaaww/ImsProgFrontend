@@ -4,30 +4,31 @@ import { Form, Field, FormElement } from '@progress/kendo-react-form';
 import { Input } from '@progress/kendo-react-inputs';
 import { Button } from '@progress/kendo-react-buttons';
 import { useState } from "react";
-import { ImsProgData } from "./ImsProgData";
+import { useNavigate } from "react-router-dom";
 
-interface imsProgGui{
-    programName: string; 
-    cust: string;
-    description: string;
-    updates: string;
-    type: string;
-}
+
 
 export function CreateItem(){
     const [loading, setLoading] = useState<boolean>(false);
     const [message, setMessage] = useState<string>();
+    const navigate = useNavigate();
     const handleSubmit = async (data: any) => {
         try {
             setLoading(true)
             console.log('Form data:', data);
             const response = await fetch(globalUrlApi + "/addData", {
                     method: "POST",
+                    credentials: 'include',
                     headers: {
                     'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({"Program Name": data.programName, "Cust": data.cust, "Description": data.description, "Updates to TTM": (data.updates == null? "" : data.updates), "Type": data.type}),
             });
+            if (response.status == 401){
+                navigate("/")
+                console.warn("Login Timed Out")
+                return
+            }
             const result = await response.json();
             console.log(result)
             setMessage("Date Sent to Server Successfully")

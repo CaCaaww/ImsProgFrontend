@@ -1,4 +1,4 @@
-import { useState} from 'react';
+import { useEffect, useState} from 'react';
 import { useNavigate} from 'react-router-dom';
 import { Drawer, DrawerContent, type DrawerSelectEvent } from '@progress/kendo-react-layout';
 import { Button } from '@progress/kendo-react-buttons';
@@ -8,19 +8,33 @@ import { useLocation } from 'react-router-dom';
 
 
 const DrawerContainer = (props: { children: unknown; }) => {
+    if (!globalUserGroups) return;
     //const { id } = useParams()
 
-    const items = [
+    const [items, setItems] = useState([
     { text: 'Home', route: '/home' },
     { text: 'Data', route: '/data' },
-    { text: 'Create', route: '/create'},
+    { text: 'Create', disabled: true, route: '/create'},
     { separator: true },
     { text: 'Logout', disabled: false,  route: '/' },
-    ];
+    ]);
     const navigate = useNavigate();
     const [expanded, setExpanded] = useState<boolean>(true);
     const [selected, setSelected] = useState(items.findIndex((x) => x.route === useLocation().pathname));
-
+    useEffect(() => {
+        //console.log(globalUserGroups)
+        globalUserGroups.forEach(element => {
+            if (element == "IMSADMIN"){
+                setItems(prevItems =>
+                    prevItems.map(item =>
+                    item.text === 'Create'
+                    ? { text: 'Create', disabled: false, route: '/create' }
+                    :  item
+                    )
+                 );
+            }
+        });
+    }, [globalUserGroups])
     
 
     const handleClick = () => {
