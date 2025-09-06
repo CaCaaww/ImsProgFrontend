@@ -1,7 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { FetchUrlFromFile } from "../reactConfig"
-import { useEffect } from "react";
-import { SetTypes } from "../reactConfig";
 import { Field, Form, FormElement } from "@progress/kendo-react-form";
 import { Input } from "@progress/kendo-react-inputs";
 import { Button } from "@progress/kendo-react-buttons";
@@ -18,8 +16,7 @@ export function Login(){
         value ? '' : 'This field is required.';
 
     const handleClick = async (data : any) => {
-        console.log("loggin into LDAP")
-        const response = await fetch('http://localhost:8080/login', {
+        const response = await fetch(globalLoginUrl, {
             method: 'POST',
             credentials: 'include',
             headers: {

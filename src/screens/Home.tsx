@@ -1,40 +1,9 @@
 //import { FetchUrlFromFile } from "../reactConfig";
-import { useEffect } from "react";
 import { SetTypes } from "../reactConfig";
 import DrawerContainer from "./drawerContainer";
-import { useNavigate } from "react-router-dom";
 
 export function Home(){
-    const navigate = useNavigate();
     SetTypes(globalUrlApi)
-    useEffect(() => {
-        const fetchGroups = async () => {
-            // const result = await fetch(globalUrlApi + "/userGroups", {
-            //     method: 'GET',
-            //     credentials: 'include',
-            //     headers: {
-            //         'Accept': 'application/json'
-            //     }
-            // })
-            // if (!result.ok){
-            //     if (result.status == 401){
-            //     navigate("/")
-            //     console.warn("Login Timed Out")
-            //     return
-            //     }
-            //     throw new Error(`Error: ${result.statusText}`);
-            // } else {
-            //     const list = await result.json() as string[]
-            //     console.log(list)
-            //     globalThis.globalUserGroups = list;
-            // }
-        }
-        fetchGroups();
-    }, []);
-    // const getUrlInfo = async () => {
-    //         FetchUrlFromFile();
-    //     }
-    //     getUrlInfo();
 
     return(
         <DrawerContainer>

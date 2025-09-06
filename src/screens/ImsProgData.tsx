@@ -53,6 +53,9 @@ export function ImsProgData(){
     const [selectedStatus, setSelectedStatus] = useState<string>('All');
     
 
+    
+    const checkGroups =  globalUserGroups.indexOf('IMSADMIN') != -1? false : true;
+    
     const [dataState, setDataState] = useState<State>({
       skip: 0,
       take: 15,
@@ -174,44 +177,42 @@ export function ImsProgData(){
       }
     }
 
-    const handlePrint = async () =>{
-      try {
-        if (data != undefined){
-            //var dataString : string = "[";
-            var dataState2 : State = {
-              skip: 0,
-              take: data.length,
-              sort: dataState.sort,
-              filter: dataState.filter
-            }
-            const processedData2 = process(data, dataState2);
-            //console.log(processedData2)
-            // processedData2.data.forEach(element => {
-            //   dataString += JSON.stringify({"Program Name": element.programName, "Cust": element.cust, "Description": element.description,
-            //    "Updates to TTM": (element.updates == null? "" : element.updates), "Type": element.type}) + ", "
-            // });
-            // dataString = dataString.substring(0, dataString.length -2);
-            console.log("proccessedData",JSON.stringify(processedData2.data));
-            const response = await fetch(globalUrlApi + "/partialPrint", {
-                    method: "POST",
-                    credentials: 'include',
-                    headers: {
-                    'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(processedData2.data),
-            });
-            if (response.status == 401){
+    const downloadTxt = async () => {
+      if (data != undefined){
+        //var dataString : string = "[";
+        var dataState2 : State = {
+          skip: 0,
+          take: data.length,
+          sort: dataState.sort,
+          filter: dataState.filter
+        }
+        const processedData2 = process(data, dataState2);
+        const response = await fetch(globalUrlApi + '/partialPrint', {
+          method: "POST",
+          credentials: 'include',
+          headers: {
+          'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(processedData2.data)
+        });
+        if (response.status == 401){
                 navigate("/")
                 console.warn("Login Timed Out")
                 return
-            }
-            const result = await response;
-            console.log("result",result)
-          }
-      } catch (error) {
-        console.error("Error sending Data:", error);
-      } 
-    }
+        }
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'report.txt'; // suggested filename
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        window.URL.revokeObjectURL(url);
+      }
+    };
 
     useEffect(() => {
         const fetchData = async() => {
@@ -228,6 +229,9 @@ export function ImsProgData(){
               if (result.status == 401){
                 navigate("/")
                 console.warn("Login Timed Out")
+                return
+              } else if (result.status == 404) {
+                navigate("/")
                 return
               }
               throw new Error(`Error: ${result.statusText}`);
@@ -288,7 +292,7 @@ export function ImsProgData(){
               style={{ width: '150px' }}
             />
         </div>
-        <button onClick={handlePrint}>Print Data Grid</button>
+        <button onClick={downloadTxt} disabled={checkGroups}>Download Data Grid</button>
       </DrawerContainer>
     )
 }

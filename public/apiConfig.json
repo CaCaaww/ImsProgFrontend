@@ -1,3 +1,4 @@
 {
-    "apiUrl" : "http://localhost:8080/imsProg"
+    "apiUrl" : "http://localhost:8040/IMSProgData/imsProg",
+    "loginUrl" : "http://localhost:8040/IMSProgData/login"
 }

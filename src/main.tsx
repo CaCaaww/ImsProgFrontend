@@ -5,14 +5,17 @@ import { ImsProgData } from './screens/ImsProgData'
 import { Login } from './screens/Login.tsx';
 import { Home } from './screens/Home.tsx';
 import { CreateItem } from './screens/createItem.tsx';
+import AppInitializer from './appInitializer.tsx';
 
 createRoot(document.getElementById('root')!).render(
-  <BrowserRouter basename={'/ImsProgFrontend'} >   
-    <Routes>
-      <Route path="/" element={<Login/>}/>
-      <Route path="/data" element={<ImsProgData />} />
-      <Route path="/create" element={< CreateItem/>} />
-      <Route path="/home" element={<Home/>} />
-    </Routes>
-  </BrowserRouter>
+  
+    <BrowserRouter basename='/ImsProgFrontend' >  
+      <Routes>
+        <Route path="/" element={<Login/>}/>
+        <Route path="/data" element={<ImsProgData />} />
+        <Route path="/create" element={< CreateItem/>} />
+        <Route path="/home" element={<Home/>} />
+      </Routes>
+    </BrowserRouter>
+  
 )

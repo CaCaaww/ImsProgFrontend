@@ -7,6 +7,7 @@ declare global {
     var globalTypes : String[];
     var globalTypesForForm : String[];
     var globalUserGroups: String[];
+    var globalLoginUrl: string;
 }
 globalThis.globalUrlApi = "potato2";
 //globalThis.globalUserGroups = []
@@ -15,10 +16,13 @@ globalThis.globalUrlApi = "potato2";
 export const FetchUrlFromFile = async () => {
     axios.get('./apiConfig.json').then((res) => {
         globalThis.globalUrlApi = (res.data.apiUrl);
+        globalThis.globalLoginUrl = (res.data.loginUrl);
+        console.log("Api URL's Configured")
+        return res.data.loginUrl
         //console.log(res.data.apiUrl)
         //SetTypes(res.data.apiUrl)
     });
-    return globalUrlApi;
+    
 }
 
 export const SetTypes = async (url : String) => {
@@ -38,6 +42,9 @@ export const SetTypes = async (url : String) => {
             if (result.status == 401){
                 navigate("/")
                 console.warn("Login Timed Out")
+                return
+            } else if (result.status == 404){
+                navigate("/")
                 return
             }
             throw new Error(`Error: ${result.statusText}`);

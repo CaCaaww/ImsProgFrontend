@@ -28,6 +28,9 @@ export function CreateItem(){
                 navigate("/")
                 console.warn("Login Timed Out")
                 return
+            } else  if (response.status == 404){
+                navigate("/")
+                return
             }
             const result = await response.json();
             console.log(result)
