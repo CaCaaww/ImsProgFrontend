@@ -5,7 +5,7 @@ import { ImsProgData } from './screens/ImsProgData'
 import { Login } from './screens/Login.tsx';
 import { Home } from './screens/Home.tsx';
 import { CreateItem } from './screens/createItem.tsx';
-import AppInitializer from './appInitializer.tsx';
+import { DeleteArchive } from './screens/deleteArchive.tsx';
 
 createRoot(document.getElementById('root')!).render(
   
@@ -15,6 +15,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/data" element={<ImsProgData />} />
         <Route path="/create" element={< CreateItem/>} />
         <Route path="/home" element={<Home/>} />
+        <Route path="/archive" element={<DeleteArchive/>}/>
       </Routes>
     </BrowserRouter>
   

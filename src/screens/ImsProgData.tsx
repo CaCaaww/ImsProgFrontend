@@ -6,7 +6,8 @@ import type { PagerTargetEvent } from '@progress/kendo-react-data-tools';
 import { process, type CompositeFilterDescriptor, type DataResult, type FilterDescriptor, type SortDescriptor, type State } from '@progress/kendo-data-query';
 import { DropDownList, type DropDownListChangeEvent } from '@progress/kendo-react-dropdowns';
 import { useNavigate } from "react-router-dom";
-
+//import { DeleteCell } from "../otherStuff/DeleteCell";
+import { Button } from "@progress/kendo-react-buttons";
 
 
 //interface that models the data stored in the grid. 
@@ -32,10 +33,10 @@ interface PageState {
 const initialDataState: PageState = { skip: 0, take: 15 };
 //initial configuration of items
 const initialColumns = [
-  { field: "Program Name", title: "Program Name", orderIndex: 0, width: '150px'},
-  { field: "Cust", title: "Customer", orderIndex: 1, width: '150px' },
-  { field: "Description", title: "Description", orderIndex: 2, width: '150px' },
-  { field: "Updates", title: "Updates to TTM", orderIndex: 3, width: '150px'},
+  { field: "programName", title: "Program Name", orderIndex: 0, width: '150px'},
+  { field: "cust", title: "Customer", orderIndex: 1, width: '150px' },
+  { field: "description", title: "Description", orderIndex: 2, width: '150px' },
+  { field: "updates", title: "Updates to TTM", orderIndex: 3, width: '150px'},
   ];
 
 export function ImsProgData(){
@@ -51,10 +52,26 @@ export function ImsProgData(){
     const [sort, setSort] = useState<SortDescriptor[]>([]);
     const [filter, setFilter] = useState<CompositeFilterDescriptor | undefined>(undefined);
     const [selectedStatus, setSelectedStatus] = useState<string>('All');
-    
-
-    
+    const [deleted, setDeleted] = useState<imsProgGui[] | undefined>(() => {
+      const temp = localStorage.getItem('archived');
+      if (temp != null){
+        return JSON.parse(temp) as imsProgGui[];
+      } else {
+        return undefined;
+      }
+    })
+  
     const checkGroups =  globalUserGroups.indexOf('IMSADMIN') != -1? false : true;
+
+    function transformBackendData(data: any): imsProgGui {
+      return {
+          programName: data["Program Name"],
+          cust: data["Cust"],
+          description: data["Description"],
+          updates: data["Updates to TTM"],
+          type: data["Type"]
+      };
+    }
     
     const [dataState, setDataState] = useState<State>({
       skip: 0,
@@ -155,7 +172,7 @@ export function ImsProgData(){
         }
         
         var newFilter2 = combineFilters(newFilter, selectedStatus == 'All' ?  undefined : {field: "Type", operator: 'eq', value: selectedStatus})
-        var newDataState ={skip: page.skip, take: page.take, sort: sort, filter: newFilter2}
+        var newDataState ={skip: 0, take: page.take, sort: sort, filter: newFilter2}
         console.log(newDataState);
         updateDataState(newDataState);
         updateProcessedData(newDataState);
@@ -213,6 +230,63 @@ export function ImsProgData(){
         window.URL.revokeObjectURL(url);
       }
     };
+    const DeleteCell = (props: any) => {
+      const { dataItem, onDelete } = props;
+    
+      const handleDelete = () => {
+        console.log("Deleting:", dataItem);
+        if (onDelete) {
+          onDelete(dataItem); 
+        }
+      };
+    
+      return (
+        <td>
+          <Button
+            themeColor="error"
+            onClick={handleDelete}
+          >
+            Delete
+          </Button>
+        </td>
+      );
+    };
+
+    const handleDelete = async (itemToDelete: any) => {
+      console.log('handleDelete', deleted)
+      const result = await fetch(url +"/delete", {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          },
+        body: JSON.stringify({"Program Name": itemToDelete.programName, "Cust": itemToDelete.cust, "Description": itemToDelete.description, "Updates to TTM": (itemToDelete.updates == null? "" : itemToDelete.updates), "Type": itemToDelete.type})
+      });
+      if (!result.ok){
+        if (result.status == 401){
+          navigate("/")
+          console.warn("Login Timed Out")
+          return
+        } else {
+          console.warn("there was an error -- possibly not found")
+          return
+        }
+      }
+      const updated = Array.isArray(deleted)
+        ? [...deleted, itemToDelete]
+        : [itemToDelete];
+
+      setDeleted(updated);
+      localStorage.setItem("archived", JSON.stringify(updated));
+      if (data != undefined){
+        const updatedArray = data.filter(item => !(item.programName == itemToDelete.programName 
+          && item.description == itemToDelete.description && item.cust == itemToDelete.cust
+          && item.type == itemToDelete.type && item.updates == itemToDelete.updates));
+        setData(updatedArray);
+        setProcessedData(process(updatedArray, dataState))
+      }
+      
+    };
 
     useEffect(() => {
         const fetchData = async() => {
@@ -237,9 +311,13 @@ export function ImsProgData(){
               throw new Error(`Error: ${result.statusText}`);
             }
             var imslist : imsProgGui[]  = await result.json() as imsProgGui[];
-            setData(imslist);
-            setTotal(imslist.length)
-            setProcessedData(process(imslist, dataState))
+            var temp :imsProgGui[] = [];
+            imslist.forEach(element => {
+              temp.push(transformBackendData(element))
+            });
+            setData(temp);
+            setTotal(temp.length)
+            setProcessedData(process(temp, dataState))
           } catch (err) {
             console.error("Error fetching data:", err);
           } finally {
@@ -283,6 +361,14 @@ export function ImsProgData(){
             {cols.map((col) => (
             <GridColumn key={col.field} field={col.field} title={col.title} orderIndex={col.orderIndex} width={col.width}></GridColumn>
             ))}
+            <GridColumn
+              title="Actions"
+              orderIndex={cols.length}
+              width={'80px'}
+              cells={{
+                data: (props) => <DeleteCell {...props} onDelete={handleDelete} />
+              }}
+            />
             </Grid>
             <DropDownList
               data={globalTypes}

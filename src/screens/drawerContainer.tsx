@@ -15,6 +15,7 @@ const DrawerContainer = (props: { children: unknown; }) => {
     { text: 'Home', route: '/home' },
     { text: 'Data', route: '/data' },
     { text: 'Create', disabled: true, route: '/create'},
+    { text: 'Delete Archive', disabled: true, route: '/archive'},
     { separator: true },
     { text: 'Logout', disabled: false,  route: '/' },
     ]);
@@ -26,11 +27,15 @@ const DrawerContainer = (props: { children: unknown; }) => {
         globalUserGroups.forEach(element => {
             if (element == "IMSADMIN"){
                 setItems(prevItems =>
-                    prevItems.map(item =>
-                    item.text === 'Create'
-                    ? { text: 'Create', disabled: false, route: '/create' }
-                    :  item
-                    )
+                    prevItems.map(item => {
+                        if (item.text === 'Create'){
+                            return { ...item, disabled: false}
+                        } else if (item.text === 'Delete Archive'){
+                            return {...item, disabled: false}
+                        } else {
+                            return item
+                        }
+                    })
                  );
             }
         });
