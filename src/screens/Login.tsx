@@ -1,22 +1,22 @@
 import { useNavigate } from "react-router-dom";
-import { FetchUrlFromFile } from "../reactConfig"
 import { Field, Form, FormElement } from "@progress/kendo-react-form";
 import { Input } from "@progress/kendo-react-inputs";
 import { Button } from "@progress/kendo-react-buttons";
+import { useConfig } from "../otherStuff/ConfigProvider";
 
 
 export function Login(){
-    const getUrlInfo = async () => {
-        FetchUrlFromFile();
-    }
-    getUrlInfo();
+    const { config, setConfig } = useConfig();
+    // if (!config) return(<div>Loading Config...</div>);
     const navigate = useNavigate();
 
     const requiredValidator = (value: any) =>
         value ? '' : 'This field is required.';
 
+    
     const handleClick = async (data : any) => {
-        const response = await fetch(globalLoginUrl, {
+        if (!config) return
+        const response = await fetch(config.globalLoginUrl, {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -26,9 +26,15 @@ export function Login(){
                 username: data.username,
                 password: data.password
             })
+            
         });
+        if(response.status == 404){
+            alert("NOT FOUND")
+            window.location.reload();
+        }
+        //Setting user groups
         if (response.ok){
-            const result = await fetch(globalUrlApi + "/userGroups", {
+            const result = await fetch(config.globalUrlApi + "/userGroups", {
                 method: 'GET',
                 credentials: 'include',
                 headers: {
@@ -37,20 +43,25 @@ export function Login(){
             })
             if (!result.ok){
                 if (result.status == 401){
-                navigate("/")
-                console.warn("Login Timed Out")
-                return
+                    navigate("/")
+                    console.warn("Login Timed Out")
+                    return
+                } else if (result.status == 404) {
+                    alert("NOT FOUND -- reload page")
+                    window.location.reload();
                 }
                 throw new Error(`Error: ${result.statusText}`);
             } else {
                 const list = await result.json() as string[]
                 console.log(list)
-                globalThis.globalUserGroups = list;
+                //globalThis.globalUserGroups = list;
+                setConfig({...config, globalUserGroups : list})
+                sessionStorage.setItem("userGroups", JSON.stringify(list))
                 navigate('/home')
             }
             
         } else {
-            navigate('/');
+            window.location.reload();;
         }
     }
 

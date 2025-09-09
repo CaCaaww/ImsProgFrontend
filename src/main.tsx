@@ -6,10 +6,12 @@ import { Login } from './screens/Login.tsx';
 import { Home } from './screens/Home.tsx';
 import { CreateItem } from './screens/createItem.tsx';
 import { DeleteArchive } from './screens/deleteArchive.tsx';
+import { ConfigProvider } from './otherStuff/ConfigProvider.tsx';
 
 createRoot(document.getElementById('root')!).render(
   
-    <BrowserRouter basename='/ImsProgFrontend' >  
+    <BrowserRouter basename='/ImsProgFrontend' >
+      <ConfigProvider>  
       <Routes>
         <Route path="/" element={<Login/>}/>
         <Route path="/data" element={<ImsProgData />} />
@@ -17,6 +19,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/home" element={<Home/>} />
         <Route path="/archive" element={<DeleteArchive/>}/>
       </Routes>
+      </ConfigProvider>
     </BrowserRouter>
   
 )

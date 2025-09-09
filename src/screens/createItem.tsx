@@ -5,18 +5,22 @@ import { Input } from '@progress/kendo-react-inputs';
 import { Button } from '@progress/kendo-react-buttons';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useConfig } from "../otherStuff/ConfigProvider";
 
 
 
 export function CreateItem(){
+    const { config} = useConfig();
     const [loading, setLoading] = useState<boolean>(false);
     const [message, setMessage] = useState<string>();
     const navigate = useNavigate();
+
+    
     const handleSubmit = async (data: any) => {
         try {
             setLoading(true)
             console.log('Form data:', data);
-            const response = await fetch(globalUrlApi + "/addData", {
+            const response = await fetch(config?.globalUrlApi + "/addData", {
                     method: "POST",
                     credentials: 'include',
                     headers: {
@@ -80,7 +84,7 @@ export function CreateItem(){
                         name="type"
                         component={DropDownList}
                         label="Type"
-                        data={globalTypesForForm}
+                        data={config?.globalTypesForForm}
                         validator={requiredValidator}
                     />
                     <div className="k-form-buttons">

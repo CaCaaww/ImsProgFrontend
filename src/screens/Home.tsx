@@ -1,9 +1,16 @@
-//import { FetchUrlFromFile } from "../reactConfig";
-import { SetTypes } from "../reactConfig";
+import { useEffect } from "react";
+import { useSetTypes } from "../reactConfig";
 import DrawerContainer from "./drawerContainer";
+import { useConfig } from "../otherStuff/ConfigProvider";
 
 export function Home(){
-    SetTypes(globalUrlApi)
+    const { config} = useConfig()
+    const SetTypes = useSetTypes();
+    useEffect(() => {
+        if (!config) return;
+        SetTypes(config.globalUrlApi)
+    }, [config?.globalUrlApi])
+    
 
     return(
         <DrawerContainer>

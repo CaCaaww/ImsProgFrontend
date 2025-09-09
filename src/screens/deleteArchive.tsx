@@ -1,8 +1,9 @@
-import { useOptimistic, useState } from "react";
+import { useState } from "react";
 import DrawerContainer from "./drawerContainer";
-import { Grid, GridColumn, type GridSelectionChangeEvent } from "@progress/kendo-react-grid";
+import { Grid, GridColumn } from "@progress/kendo-react-grid";
 import { Button } from "@progress/kendo-react-buttons";
-import { data, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useConfig } from "../otherStuff/ConfigProvider";
 
 
 
@@ -34,10 +35,11 @@ const initialColumns = [
 ];
 
 export function DeleteArchive(){
-    const [pageSizeValue, setPageSizeValue] = useState<number | string | undefined>(); //stores how many rows per page.
+    const { config } = useConfig();
+    const [pageSizeValue] = useState<number | string | undefined>(); //stores how many rows per page.
     const [numButtons] = useState<number> (5); //number of page buttons on the bottom scrollbar
     const [cols] = useState<column[]>(initialColumns);
-    const [page, setPage] = useState<PageState>(initialDataState); //stores a PageState, which stores the skip and take of a page.
+    const [page] = useState<PageState>(initialDataState); //stores a PageState, which stores the skip and take of a page.
     const navigate = useNavigate();    
     const [selected, setSelected] = useState<imsProgGui[]>([]);
     const [deleted, setDeleted] = useState<imsProgGui[] | undefined>(() => {
@@ -48,8 +50,9 @@ export function DeleteArchive(){
         return undefined;
         }
     })
-    const checkGroups =  globalUserGroups.indexOf('IMSADMIN') != -1? false : true;
+    const checkGroups =  config?.globalUserGroups.indexOf('IMSADMIN') != -1? false : true;
 
+    
 
     function transformBackendData(data: any): imsProgGui {
         return {
@@ -85,7 +88,7 @@ export function DeleteArchive(){
     const handleRestore = async (itemToRestore: imsProgGui) => {
         itemToRestore = itemToRestore as imsProgGui;
         // console.log('handleRestore', itemToRestore)
-        const response = await fetch(globalUrlApi + "/addData", {
+        const response = await fetch(config?.globalUrlApi + "/addData", {
                 method: "POST",
                 credentials: 'include',
                 headers: {
@@ -113,14 +116,6 @@ export function DeleteArchive(){
             localStorage.setItem('archived', JSON.stringify(updatedArray));
         }
     };
-    function CheckSelected(dataItem : any) {
-        selected.forEach(element => {
-            if (element.programName == dataItem.programName 
-            && element.description == dataItem.description && element.cust == dataItem.cust
-            && element.type == dataItem.type && element.updates == dataItem.updates) return true
-        });
-        return false;
-    }
     const CheckBoxCell = (props: any) => {
         const { dataItem } = props;
     

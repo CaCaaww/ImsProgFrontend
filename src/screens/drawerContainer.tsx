@@ -4,13 +4,12 @@ import { Drawer, DrawerContent, type DrawerSelectEvent } from '@progress/kendo-r
 import { Button } from '@progress/kendo-react-buttons';
 import { menuIcon } from '@progress/kendo-svg-icons';
 import { useLocation } from 'react-router-dom';
+import { useConfig } from '../otherStuff/ConfigProvider';
 
 
 
 const DrawerContainer = (props: { children: unknown; }) => {
-    if (!globalUserGroups) return;
-    //const { id } = useParams()
-
+    const { config } = useConfig();
     const [items, setItems] = useState([
     { text: 'Home', route: '/home' },
     { text: 'Data', route: '/data' },
@@ -23,8 +22,9 @@ const DrawerContainer = (props: { children: unknown; }) => {
     const [expanded, setExpanded] = useState<boolean>(true);
     const [selected, setSelected] = useState(items.findIndex((x) => x.route === useLocation().pathname));
     useEffect(() => {
+        if (!config?.globalUserGroups) return;
         //console.log(globalUserGroups)
-        globalUserGroups.forEach(element => {
+        config.globalUserGroups.forEach(element => {
             if (element == "IMSADMIN"){
                 setItems(prevItems =>
                     prevItems.map(item => {
@@ -39,7 +39,7 @@ const DrawerContainer = (props: { children: unknown; }) => {
                  );
             }
         });
-    }, [globalUserGroups])
+    }, [config?.globalUserGroups])
     
 
     const handleClick = () => {
@@ -47,6 +47,9 @@ const DrawerContainer = (props: { children: unknown; }) => {
     };
 
     const onSelect = (e: DrawerSelectEvent) => {
+        if (e.itemTarget.props.route == "/"){
+            sessionStorage.clear();
+        }
         navigate(e.itemTarget.props.route);
         setSelected(e.itemIndex);
     };

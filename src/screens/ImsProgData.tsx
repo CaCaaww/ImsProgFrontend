@@ -8,6 +8,7 @@ import { DropDownList, type DropDownListChangeEvent } from '@progress/kendo-reac
 import { useNavigate } from "react-router-dom";
 //import { DeleteCell } from "../otherStuff/DeleteCell";
 import { Button } from "@progress/kendo-react-buttons";
+import { useConfig } from "../otherStuff/ConfigProvider";
 
 
 //interface that models the data stored in the grid. 
@@ -40,7 +41,8 @@ const initialColumns = [
   ];
 
 export function ImsProgData(){
-    var url = globalUrlApi;
+    //var url = globalUrlApi;
+    const { config } = useConfig();
     const navigate = useNavigate();
     const [loading, setLoading] = useState<boolean>(false);
     const [data, setData] = useState<imsProgGui[]>();
@@ -61,7 +63,8 @@ export function ImsProgData(){
       }
     })
   
-    const checkGroups =  globalUserGroups.indexOf('IMSADMIN') != -1? false : true;
+    
+    const checkGroups =  config?.globalUserGroups.indexOf('IMSADMIN') != -1? false : true;
 
     function transformBackendData(data: any): imsProgGui {
       return {
@@ -161,7 +164,8 @@ export function ImsProgData(){
       console.log(event);
         const evfilt = ({...event.filter})
         var newFilter;
-        if (evfilt.filters != undefined){ //filter is undefined if the filter is cleared.
+        if (evfilt.filters != undefined ){ //filter is undefined if the filter is cleared.
+          console.log(evfilt.filters);
             setFilter(
                 evfilt
             );
@@ -171,7 +175,7 @@ export function ImsProgData(){
             newFilter=undefined;
         }
         
-        var newFilter2 = combineFilters(newFilter, selectedStatus == 'All' ?  undefined : {field: "Type", operator: 'eq', value: selectedStatus})
+        var newFilter2 = combineFilters(newFilter, selectedStatus == 'All' ?  undefined : {field: "type", operator: 'eq', value: selectedStatus})
         var newDataState ={skip: 0, take: page.take, sort: sort, filter: newFilter2}
         console.log(newDataState);
         updateDataState(newDataState);
@@ -182,7 +186,8 @@ export function ImsProgData(){
       console.log(event.value)
       var newFilter: CompositeFilterDescriptor | undefined;
       if (event.value != "All"){
-        newFilter = combineFilters(filter, {field: "Type", operator: 'eq', value: event.value});
+        newFilter = combineFilters(filter, {field: "type", operator: 'eq', value: event.value});
+        console.log(newFilter)
         var newDataState = {skip: page.skip, take: page.take, sort: sort, filter: newFilter}
         updateDataState(newDataState)
         updateProcessedData(newDataState)
@@ -204,7 +209,7 @@ export function ImsProgData(){
           filter: dataState.filter
         }
         const processedData2 = process(data, dataState2);
-        const response = await fetch(globalUrlApi + '/partialPrint', {
+        const response = await fetch(config?.globalUrlApi + '/partialPrint', {
           method: "POST",
           credentials: 'include',
           headers: {
@@ -254,7 +259,7 @@ export function ImsProgData(){
 
     const handleDelete = async (itemToDelete: any) => {
       console.log('handleDelete', deleted)
-      const result = await fetch(url +"/delete", {
+      const result = await fetch(config?.globalUrlApi +"/delete", {
         method: 'DELETE',
         credentials: 'include',
         headers: {
@@ -289,10 +294,11 @@ export function ImsProgData(){
     };
 
     useEffect(() => {
+        if (!config) return;
         const fetchData = async() => {
           setLoading(true)
           try {
-            const result = await fetch(url, {
+            const result = await fetch(config.globalUrlApi, {
               method: 'GET',
               credentials: 'include',
               headers: {
@@ -325,7 +331,7 @@ export function ImsProgData(){
           }
         }
         fetchData();
-      }, []);
+      }, [config?.globalUrlApi]);
     
     if (loading) return(<div>loading</div>);
 
@@ -371,7 +377,7 @@ export function ImsProgData(){
             />
             </Grid>
             <DropDownList
-              data={globalTypes}
+              data={config?.globalTypes}
               value={selectedStatus}
               onChange={dropDownChange}
               //onChange={(e) => setSelectedStatus(e.value)}
