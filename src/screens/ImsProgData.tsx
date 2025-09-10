@@ -1,4 +1,4 @@
-import { useEffect, useState} from "react"
+import { useEffect, useState, type SetStateAction} from "react"
 import {Grid, GridColumn, type GridFilterChangeEvent, type GridPageChangeEvent, type GridSortChangeEvent, } from '@progress/kendo-react-grid';
 import '@progress/kendo-theme-default/dist/all.css';
 import DrawerContainer from "./drawerContainer";
@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 //import { DeleteCell } from "../otherStuff/DeleteCell";
 import { Button } from "@progress/kendo-react-buttons";
 import { useConfig } from "../otherStuff/ConfigProvider";
+import { DialogForm } from "../otherStuff/DialogForm";
 
 
 //interface that models the data stored in the grid. 
@@ -41,7 +42,7 @@ const initialColumns = [
   ];
 
 export function ImsProgData(){
-    //var url = globalUrlApi;
+    const [fetchData, setFetchData] = useState<number>(0);
     const { config } = useConfig();
     const navigate = useNavigate();
     const [loading, setLoading] = useState<boolean>(false);
@@ -62,9 +63,26 @@ export function ImsProgData(){
         return undefined;
       }
     })
-  
-    
+
+    const [dialogVisible, setDialogVisible] = useState(false);
+    const [userData, setUserData] = useState<imsProgGui>({programName: "did", cust: "not", description: "load", updates: "in", type: "Query"});
+    // const [dialogState, setDialogState] = useState({
+    //   visible: false,
+    //   userData: {programName: "did", cust: "not", description: "load", updates: "in", type: "Query"}
+    // });
+    // const handleOpen = () => setDialogState({...dialogState, visible:true});
+    // const handleClose = () => setDialogState({...dialogState, visible:false});
+ 
     const checkGroups =  config?.globalUserGroups.indexOf('IMSADMIN') != -1? false : true;
+
+    function formatDataForBackend(data: imsProgGui) {
+      return (
+        {"Program Name": data.programName, 
+          "Cust": data.cust, "Description": data.description, 
+          "Updates to TTM": (data.updates == null? "" : data.updates), 
+          "Type": data.type}
+        )
+    }
 
     function transformBackendData(data: any): imsProgGui {
       return {
@@ -87,7 +105,6 @@ export function ImsProgData(){
     const updateProcessedData = (newDataState : State) => {
       if (data != undefined){
         setProcessedData(process(data, newDataState));
-        //console.log(process(data, newDataState))
         setTotal(process(data, newDataState).total)
       }
     }
@@ -165,7 +182,6 @@ export function ImsProgData(){
         const evfilt = ({...event.filter})
         var newFilter;
         if (evfilt.filters != undefined ){ //filter is undefined if the filter is cleared.
-          console.log(evfilt.filters);
             setFilter(
                 evfilt
             );
@@ -177,7 +193,6 @@ export function ImsProgData(){
         
         var newFilter2 = combineFilters(newFilter, selectedStatus == 'All' ?  undefined : {field: "type", operator: 'eq', value: selectedStatus})
         var newDataState ={skip: 0, take: page.take, sort: sort, filter: newFilter2}
-        console.log(newDataState);
         updateDataState(newDataState);
         updateProcessedData(newDataState);
     }
@@ -187,7 +202,6 @@ export function ImsProgData(){
       var newFilter: CompositeFilterDescriptor | undefined;
       if (event.value != "All"){
         newFilter = combineFilters(filter, {field: "type", operator: 'eq', value: event.value});
-        console.log(newFilter)
         var newDataState = {skip: page.skip, take: page.take, sort: sort, filter: newFilter}
         updateDataState(newDataState)
         updateProcessedData(newDataState)
@@ -236,7 +250,7 @@ export function ImsProgData(){
       }
     };
     const DeleteCell = (props: any) => {
-      const { dataItem, onDelete } = props;
+      const { dataItem, onDelete, onUpdate } = props;
     
       const handleDelete = () => {
         console.log("Deleting:", dataItem);
@@ -244,14 +258,30 @@ export function ImsProgData(){
           onDelete(dataItem); 
         }
       };
+
+      const handleUpdate = () => {
+        console.log("Updating", dataItem);
+        if (onUpdate){
+          onUpdate(dataItem);
+        }
+      }
     
       return (
         <td>
           <Button
             themeColor="error"
+            disabled={checkGroups}
             onClick={handleDelete}
           >
             Delete
+          </Button>
+
+          <Button
+            themeColor="dark"
+            disabled={checkGroups}
+            onClick={handleUpdate}
+          >
+            Update
           </Button>
         </td>
       );
@@ -292,6 +322,43 @@ export function ImsProgData(){
       }
       
     };
+    // useEffect(() => {
+    //   if (userData) {
+    //     setDialogVisible(true);
+    //   }
+    // }, [userData]);
+
+    const handleUpdate = (itemToUpdate : any) => {
+      var listForApi : imsProgGui[] = [];
+      listForApi.push(itemToUpdate as imsProgGui)
+      console.log("list for api" ,listForApi)
+      setUserData(itemToUpdate);
+      setDialogVisible(true)
+    }
+
+    const handleDialogSubmit = async (updatedData: imsProgGui) => {
+      const result = await fetch(config?.globalUrlApi +"/update", {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          },
+        body: JSON.stringify([formatDataForBackend(userData), formatDataForBackend(updatedData)])
+      });
+      if (!result.ok){
+        if (result.status == 401){
+          navigate("/")
+          console.warn("Login Timed Out")
+          return
+        } else {
+          console.warn("there was an error -- possibly not found")
+          return
+        }
+      }
+      console.log("Updated:", updatedData);
+      setFetchData(prev => prev + 1);
+      
+    } 
 
     useEffect(() => {
         if (!config) return;
@@ -330,8 +397,9 @@ export function ImsProgData(){
             setLoading(false);
           }
         }
+        console.log("fetching data")
         fetchData();
-      }, [config?.globalUrlApi]);
+      }, [config?.globalUrlApi, fetchData]);
     
     if (loading) return(<div>loading</div>);
 
@@ -370,9 +438,9 @@ export function ImsProgData(){
             <GridColumn
               title="Actions"
               orderIndex={cols.length}
-              width={'80px'}
+              width={'180px'}
               cells={{
-                data: (props) => <DeleteCell {...props} onDelete={handleDelete} />
+                data: (props) => <DeleteCell {...props} onDelete={handleDelete} onUpdate={handleUpdate} />
               }}
             />
             </Grid>
@@ -384,7 +452,16 @@ export function ImsProgData(){
               style={{ width: '150px' }}
             />
         </div>
-        <button onClick={downloadTxt} disabled={checkGroups}>Download Data Grid</button>
+        <button onClick={downloadTxt} >Download Data Grid</button>
+        <DialogForm
+          visible={dialogVisible}
+          onClose={() => {
+            setDialogVisible(false);
+
+          }}
+          onSubmit={handleDialogSubmit}
+          initialData={userData}
+        />
       </DrawerContainer>
     )
 }
